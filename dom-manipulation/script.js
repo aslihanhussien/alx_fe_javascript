@@ -11,20 +11,30 @@ function saveQuotes() {
 }
 
 /**
+ * Fetches quotes from the simulated server (localStorage).
+ * REQUIRED NAME: fetchQuotesFromServer
+ * @returns {Array} Array of quotes from the simulated server.
+ */
+function fetchQuotesFromServer() {
+    const serverQuotesString = localStorage.getItem('serverQuotes');
+    return JSON.parse(serverQuotesString || '[]');
+}
+
+/**
  * Loads the 'quotes' array from Local Storage and initializes defaults or server data.
  */
 function loadQuotes() {
     const storedQuotes = localStorage.getItem('storedQuotes');
     
-    // Check if there is server data to initialize from (Simulated)
-    const serverQuotes = localStorage.getItem('serverQuotes');
+    // Step 1: Fetch from simulated server
+    const serverQuotes = fetchQuotesFromServer();
     
     if (storedQuotes) {
         // Load quotes from Local Storage (Client's current state)
         quotes = JSON.parse(storedQuotes);
-    } else if (serverQuotes) {
+    } else if (serverQuotes.length > 0) {
         // If client storage is empty, initialize from simulated server data
-        quotes = JSON.parse(serverQuotes);
+        quotes = serverQuotes;
         saveQuotes(); // Save to local storage for the first time
     } else {
         // Use default initial quotes if both Local Storage and server are empty
@@ -65,16 +75,14 @@ function displaySessionData() {
  * Simulates an external update to the "server" database by adding a quote only there.
  */
 function simulateServerUpdate() {
-    let serverQuotes = JSON.parse(localStorage.getItem('serverQuotes') || '[]');
+    let serverQuotes = fetchQuotesFromServer();
     
-    // Add a new quote only to the "server"
     const newServerQuote = { 
         text: "The future belongs to those who believe in the beauty of their dreams.", 
         category: "Server Update" 
     };
     serverQuotes.push(newServerQuote);
     
-    // Store back to local storage as the new server state
     localStorage.setItem('serverQuotes', JSON.stringify(serverQuotes));
 
     updateSyncStatus("Server updated externally. A sync is needed!", 'alert');
@@ -84,38 +92,45 @@ function simulateServerUpdate() {
  * Syncs local quotes with simulated server quotes and handles conflicts.
  */
 function syncQuotes() {
-    const serverQuotesString = localStorage.getItem('serverQuotes');
+    // Step 1: Use the dedicated fetch function
+    const serverQuotes = fetchQuotesFromServer();
     const localQuotesString = localStorage.getItem('storedQuotes');
     
-    if (serverQuotesString === localQuotesString) {
-        // No difference - Fast-forward
+    if (!localQuotesString) {
+        // If local storage is unexpectedly empty, re-run load logic and fetch
+        loadQuotes();
+        updateSyncStatus("Client data re-initialized from server.", 'ok');
+        return;
+    }
+
+    const localQuotes = JSON.parse(localQuotesString);
+    
+    // Check if client and server data strings match (simple equality check)
+    if (JSON.stringify(serverQuotes) === JSON.stringify(localQuotes)) {
         updateSyncStatus("Synchronization complete. Data is already synchronized.", 'ok');
         return;
     }
 
-    const serverQuotes = JSON.parse(serverQuotesString || '[]');
-    const localQuotes = JSON.parse(localQuotesString || '[]');
-    
-    // Simple Conflict Resolution: Find server quotes not present locally
+    // Conflict Resolution: Find server quotes not present locally
     const newServerQuotes = serverQuotes.filter(sQuote => 
         !localQuotes.some(lQuote => lQuote.text === sQuote.text)
     );
 
     if (newServerQuotes.length > 0) {
-        // Conflict detected: Server has new data
+        // Conflict detected: Server has new data (Server Wins)
         quotes.push(...newServerQuotes); // Merge server data into client
         saveQuotes(); // Save the merged result locally
         
         updateSyncStatus(`Synchronization successful: Merged ${newServerQuotes.length} new quotes from the server.`, 'alert');
         
-        // After merging, update the server to reflect the client's new, complete state
+        // Update the server to reflect the client's new, complete state
         localStorage.setItem('serverQuotes', JSON.stringify(quotes));
 
         // Refresh UI elements
         populateCategories();
         filterQuotes();
     } else if (localQuotes.length > serverQuotes.length) {
-        // Client has new data not on server (i.e., new quotes added locally)
+        // Client has new data not on server (Local Wins)
         localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
         updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
     } else {
@@ -137,8 +152,6 @@ function updateSyncStatus(message, type) {
 const quoteDisplay = document.getElementById('quoteDisplay');
 const newQuoteButton = document.getElementById('newQuote');
 const formContainer = document.getElementById('formContainer');
-
-// Correctly referencing the filter element ID
 const filterSelect = document.getElementById('categoryFilter');
 
 
