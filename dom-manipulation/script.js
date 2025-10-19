@@ -3,10 +3,16 @@ let quotes = [];
 
 // --- UTILITY FUNCTIONS FOR WEB STORAGE AND DATA HANDLING (Task 1 & 3) ---
 
+/**
+ * Saves the current 'quotes' array to Local Storage.
+ */
 function saveQuotes() {
     localStorage.setItem('storedQuotes', JSON.stringify(quotes));
 }
 
+/**
+ * Loads the 'quotes' array from Local Storage and initializes defaults or server data.
+ */
 function loadQuotes() {
     const storedQuotes = localStorage.getItem('storedQuotes');
     
@@ -33,11 +39,17 @@ function loadQuotes() {
     }
 }
 
+/**
+ * Saves the last viewed quote to Session Storage.
+ */
 function saveLastViewedQuote(quote) {
     sessionStorage.setItem('lastViewedQuote', JSON.stringify(quote));
     displaySessionData();
 }
 
+/**
+ * Displays the session storage data in the DOM.
+ */
 function displaySessionData() {
     const sessionDisplay = document.getElementById('sessionDisplay');
     const storedLastQuote = sessionStorage.getItem('lastViewedQuote');
@@ -49,6 +61,9 @@ function displaySessionData() {
 
 // --- SYNCHRONIZATION FUNCTIONS (Task 3 Core) ---
 
+/**
+ * Simulates an external update to the "server" database by adding a quote only there.
+ */
 function simulateServerUpdate() {
     let serverQuotes = JSON.parse(localStorage.getItem('serverQuotes') || '[]');
     
@@ -65,11 +80,13 @@ function simulateServerUpdate() {
     updateSyncStatus("Server updated externally. A sync is needed!", 'alert');
 }
 
+/**
+ * Syncs local quotes with simulated server quotes and handles conflicts.
+ */
 function syncQuotes() {
     const serverQuotesString = localStorage.getItem('serverQuotes');
     const localQuotesString = localStorage.getItem('storedQuotes');
-    const syncStatusDiv = document.getElementById('syncStatus');
-
+    
     if (serverQuotesString === localQuotesString) {
         // No difference - Fast-forward
         updateSyncStatus("Synchronization complete. Data is already synchronized.", 'ok');
@@ -79,7 +96,7 @@ function syncQuotes() {
     const serverQuotes = JSON.parse(serverQuotesString || '[]');
     const localQuotes = JSON.parse(localQuotesString || '[]');
     
-    // Simple Conflict Resolution: Concatenate and de-duplicate (Local Wins for same text)
+    // Simple Conflict Resolution: Find server quotes not present locally
     const newServerQuotes = serverQuotes.filter(sQuote => 
         !localQuotes.some(lQuote => lQuote.text === sQuote.text)
     );
@@ -106,24 +123,28 @@ function syncQuotes() {
     }
 }
 
+/**
+ * Updates the status message in the sync section.
+ */
 function updateSyncStatus(message, type) {
     const syncStatusDiv = document.getElementById('syncStatus');
     syncStatusDiv.textContent = `Status: ${message}`;
     syncStatusDiv.className = `status-message status-${type}`;
 }
 
-// --- DOM MANIPULATION FUNCTIONS (from Task 2) ---
+// --- DOM MANIPULATION FUNCTIONS (Task 0 & 2) ---
 
 const quoteDisplay = document.getElementById('quoteDisplay');
 const newQuoteButton = document.getElementById('newQuote');
 const formContainer = document.getElementById('formContainer');
 
-// UPDATED ID REFERENCE HERE
+// Correctly referencing the filter element ID
 const filterSelect = document.getElementById('categoryFilter');
 
 
 /**
  * Populates the category filter dropdown with unique categories.
+ * REQUIRED NAME: populateCategories
  */
 function populateCategories() {
     const categories = [...new Set(quotes.map(quote => quote.category))];
@@ -142,6 +163,7 @@ function populateCategories() {
 
 /**
  * Filters and displays quotes based on the selected category, and saves the filter state.
+ * REQUIRED NAME: filterQuotes
  */
 function filterQuotes() {
     const selectedCategory = filterSelect.value;
@@ -191,6 +213,10 @@ function showRandomQuote(arrayToUse = quotes) {
 }
 
 
+/**
+ * Dynamically creates the 'Add New Quote' form.
+ * REQUIRED NAME: createAddQuoteForm
+ */
 function createAddQuoteForm() {
     const formDiv = document.createElement('div');
     formDiv.id = 'addQuoteForm';
@@ -220,6 +246,9 @@ function createAddQuoteForm() {
     formContainer.appendChild(formDiv);
 }
 
+/**
+ * Handles adding a new quote.
+ */
 function addQuote() {
     const newQuoteText = document.getElementById('newQuoteText').value.trim();
     const newQuoteCategory = document.getElementById('newQuoteCategory').value.trim();
