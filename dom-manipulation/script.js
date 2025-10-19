@@ -13,25 +13,28 @@ function saveQuotes() {
 
 /**
  * Fetches quotes from the simulated server (localStorage).
- * NOTE: For a real app, this would be an async function fetching from a real endpoint.
  * REQUIRED NAME: fetchQuotesFromServer
  * @returns {Array} Array of quotes from the simulated server.
  */
 async function fetchQuotesFromServer() {
-    // --- SIMULATION OF REAL FETCH ---
+    // --- SIMULATION OF REAL FETCH (GET) ---
     
-    // In a real app:
+    // For a real GET request, the headers might be simple:
     // try {
-    //     const response = await fetch(JSONPLACEHOLDER_URL);
+    //     const response = await fetch(JSONPLACEHOLDER_URL, {
+    //         method: 'GET',
+    //         headers: {
+    //             'Content-Type': 'application/json' // Often not strictly needed for GET, but good practice
+    //         }
+    //     });
     //     const data = await response.json();
-    //     // Transform the mock data into your quote structure if needed
     //     return data.map(item => ({ text: item.title, category: 'API' }));
     // } catch (error) {
     //     console.error('Failed to fetch from server:', error);
     //     return []; 
     // }
     
-    // Use localStorage simulation for testing purposes:
+    // Use localStorage simulation for local testing:
     const serverQuotesString = localStorage.getItem('serverQuotes');
     return JSON.parse(serverQuotesString || '[]');
 }
@@ -46,14 +49,11 @@ async function loadQuotes() {
     const serverQuotes = await fetchQuotesFromServer();
     
     if (storedQuotes) {
-        // Load quotes from Local Storage (Client's current state)
         quotes = JSON.parse(storedQuotes);
     } else if (serverQuotes.length > 0) {
-        // If client storage is empty, initialize from simulated server data
         quotes = serverQuotes;
         saveQuotes(); 
     } else {
-        // Use default initial quotes if both Local Storage and server are empty
         quotes = [
             { text: "The only way to do great work is to love what you do.", category: "Work" },
             { text: "Strive not to be a success, but rather to be of value.", category: "Inspiration" },
@@ -87,7 +87,7 @@ function displaySessionData() {
 // --- SYNCHRONIZATION FUNCTIONS (Task 3 Core) ---
 
 /**
- * Simulates an external update to the "server" database by adding a quote only there.
+ * Simulates an external update to the "server" database.
  */
 function simulateServerUpdate() {
     let serverQuotes = JSON.parse(localStorage.getItem('serverQuotes') || '[]');
@@ -106,7 +106,7 @@ function simulateServerUpdate() {
 /**
  * Syncs local quotes with simulated server quotes and handles conflicts.
  */
-async function syncQuotes() { // Made async to match fetchQuotesFromServer
+async function syncQuotes() { 
     const serverQuotes = await fetchQuotesFromServer();
     const localQuotesString = localStorage.getItem('storedQuotes');
     
@@ -118,7 +118,6 @@ async function syncQuotes() { // Made async to match fetchQuotesFromServer
 
     const localQuotes = JSON.parse(localQuotesString);
     
-    // Check if client and server data strings match (simple equality check)
     if (JSON.stringify(serverQuotes) === JSON.stringify(localQuotes)) {
         updateSyncStatus("Synchronization complete. Data is already synchronized.", 'ok');
         return;
@@ -130,21 +129,44 @@ async function syncQuotes() { // Made async to match fetchQuotesFromServer
     );
 
     if (newServerQuotes.length > 0) {
-        // Conflict detected: Server has new data
+        // Server has new data (DOWNLOAD/MERGE)
         quotes.push(...newServerQuotes);
         saveQuotes(); 
         
         updateSyncStatus(`Synchronization successful: Merged ${newServerQuotes.length} new quotes from the server.`, 'alert');
         
-        // Update the server to reflect the client's new, complete state
+        // Update the simulated server to reflect the client's new, complete state
         localStorage.setItem('serverQuotes', JSON.stringify(quotes));
 
         populateCategories();
         filterQuotes();
     } else if (localQuotes.length > serverQuotes.length) {
-        // Client has new data not on server (Local Wins)
-        // In a real app, this would be a POST/PUT call to the server
-        // await fetch(JSONPLACEHOLDER_URL, { method: 'POST', body: JSON.stringify(localQuotes) });
+        // Client has new data not on server (UPLOAD)
+        
+        // --- SIMULATION OF REAL FETCH (POST/PUT) WITH HEADERS ---
+        /*
+        try {
+            const response = await fetch(JSONPLACEHOLDER_URL, {
+                method: 'POST', // or 'PUT' for a full replacement
+                headers: {
+                    'Content-Type': 'application/json' // REQUIRED HEADER
+                },
+                body: JSON.stringify(localQuotes)
+            });
+            if (response.ok) {
+                // If the server confirms the update:
+                localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
+                updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
+            } else {
+                updateSyncStatus("Upload failed. Server error.", 'alert');
+            }
+        } catch (error) {
+            updateSyncStatus("Network error during upload.", 'alert');
+            console.error('Upload error:', error);
+        }
+        */
+        
+        // Use localStorage simulation for local testing:
         localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
         updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
     } else {
@@ -341,9 +363,9 @@ function importFromJsonFile(event) {
 
 // --- INITIALIZATION ---
 
-document.addEventListener('DOMContentLoaded', async () => { // Changed to async
+document.addEventListener('DOMContentLoaded', async () => { 
     // 1. Load quotes from Local Storage (or simulated server)
-    await loadQuotes(); // Await loadQuotes
+    await loadQuotes(); 
     
     // 2. Initialize UI elements
     createAddQuoteForm(); 
