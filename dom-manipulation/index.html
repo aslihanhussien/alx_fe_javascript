@@ -4,15 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dynamic Quote Generator</title>
+  <style>
+    /* Simple styling for better readability */
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #quoteDisplay { border: 1px solid #ccc; padding: 15px; margin: 15px 0; min-height: 50px; }
+    button, input, select { margin-top: 5px; padding: 8px; }
+    #dataManagement, #filterSection { border-top: 2px solid #eee; margin-top: 20px; padding-top: 15px; }
+  </style>
 </head>
 <body>
   <h1>Dynamic Quote Generator</h1>
   
+  <div id="filterSection">
+    <h2>Filter Quotes by Category</h2>
+    <select id="quoteCategoryFilter"></select>
+    <button onclick="filterQuotes()">Filter Quotes</button>
+    <button onclick="showRandomQuote()">Show All Quotes</button>
+  </div>
+  
+  <hr>
+
   <div id="quoteDisplay"></div>
   
   <button id="newQuote">Show New Quote</button>
 
   <div id="formContainer"></div> 
+
+  <div id="dataManagement">
+    <h2>Data Management</h2>
+
+    <button id="exportQuotes">Export Quotes (JSON)</button>
+
+    <p>Import Quotes from JSON File:</p>
+    <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+
+    <div id="sessionDisplay"></div>
+  </div>
   
   <script src="script.js"></script>
 </body>
