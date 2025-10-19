@@ -9,7 +9,10 @@
     body { font-family: Arial, sans-serif; padding: 20px; }
     #quoteDisplay { border: 1px solid #ccc; padding: 15px; margin: 15px 0; min-height: 50px; }
     button, input, select { margin-top: 5px; padding: 8px; }
-    #dataManagement, #filterSection { border-top: 2px solid #eee; margin-top: 20px; padding-top: 15px; }
+    #dataManagement, #filterSection, #syncSection { border-top: 2px solid #eee; margin-top: 20px; padding-top: 15px; }
+    .status-message { padding: 10px; margin-top: 10px; border-radius: 5px; font-weight: bold; }
+    .status-ok { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-alert { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
   </style>
 </head>
 <body>
@@ -19,7 +22,7 @@
     <h2>Filter Quotes by Category</h2>
     <select id="quoteCategoryFilter"></select>
     <button onclick="filterQuotes()">Filter Quotes</button>
-    <button onclick="showRandomQuote()">Show All Quotes</button>
+    <button onclick="showRandomQuote(quotes)">Show All Quotes</button>
   </div>
   
   <hr>
@@ -30,8 +33,15 @@
 
   <div id="formContainer"></div> 
 
+  <div id="syncSection">
+    <h2>Data Synchronization</h2>
+    <button id="syncButton">Sync Quotes with Server (Simulated)</button>
+    <div id="syncStatus" class="status-message status-ok">Status: Ready to sync.</div>
+    <button id="simulateConflict">Simulate Server Update</button>
+  </div>
+  
   <div id="dataManagement">
-    <h2>Data Management</h2>
+    <h2>Data Management (JSON)</h2>
 
     <button id="exportQuotes">Export Quotes (JSON)</button>
 
