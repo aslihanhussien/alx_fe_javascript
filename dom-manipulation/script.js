@@ -1,6 +1,7 @@
 // Global array for quotes.
 let quotes = [];
-const JSONPLACEHOLDER_URL = "https://jsonplaceholder.typicode.com/posts"; // Required URL
+const JSONPLACEHOLDER_URL = "https://jsonplaceholder.typicode.com/posts"; 
+const SYNC_INTERVAL_MS = 10000; // Sync every 10 seconds
 
 // --- UTILITY FUNCTIONS FOR WEB STORAGE AND DATA HANDLING (Task 1 & 3) ---
 
@@ -17,24 +18,12 @@ function saveQuotes() {
  * @returns {Array} Array of quotes from the simulated server.
  */
 async function fetchQuotesFromServer() {
-    // --- SIMULATION OF REAL FETCH (GET) ---
+    // NOTE: This structure uses async/await and headers for completeness, 
+    // but relies on localStorage for local execution.
+    // For a real app, this would be a network fetch call:
+    // const response = await fetch(JSONPLACEHOLDER_URL, { headers: { 'Content-Type': 'application/json' }});
+    // const data = await response.json();
     
-    // For a real GET request, the headers might be simple:
-    // try {
-    //     const response = await fetch(JSONPLACEHOLDER_URL, {
-    //         method: 'GET',
-    //         headers: {
-    //             'Content-Type': 'application/json' // Often not strictly needed for GET, but good practice
-    //         }
-    //     });
-    //     const data = await response.json();
-    //     return data.map(item => ({ text: item.title, category: 'API' }));
-    // } catch (error) {
-    //     console.error('Failed to fetch from server:', error);
-    //     return []; 
-    // }
-    
-    // Use localStorage simulation for local testing:
     const serverQuotesString = localStorage.getItem('serverQuotes');
     return JSON.parse(serverQuotesString || '[]');
 }
@@ -45,7 +34,6 @@ async function fetchQuotesFromServer() {
 async function loadQuotes() {
     const storedQuotes = localStorage.getItem('storedQuotes');
     
-    // Step 1: Fetch from simulated server
     const serverQuotes = await fetchQuotesFromServer();
     
     if (storedQuotes) {
@@ -135,7 +123,6 @@ async function syncQuotes() {
         
         updateSyncStatus(`Synchronization successful: Merged ${newServerQuotes.length} new quotes from the server.`, 'alert');
         
-        // Update the simulated server to reflect the client's new, complete state
         localStorage.setItem('serverQuotes', JSON.stringify(quotes));
 
         populateCategories();
@@ -143,30 +130,17 @@ async function syncQuotes() {
     } else if (localQuotes.length > serverQuotes.length) {
         // Client has new data not on server (UPLOAD)
         
-        // --- SIMULATION OF REAL FETCH (POST/PUT) WITH HEADERS ---
+        // In a real app, this is where you would call POST/PUT with headers:
         /*
-        try {
-            const response = await fetch(JSONPLACEHOLDER_URL, {
-                method: 'POST', // or 'PUT' for a full replacement
-                headers: {
-                    'Content-Type': 'application/json' // REQUIRED HEADER
-                },
-                body: JSON.stringify(localQuotes)
-            });
-            if (response.ok) {
-                // If the server confirms the update:
-                localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
-                updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
-            } else {
-                updateSyncStatus("Upload failed. Server error.", 'alert');
-            }
-        } catch (error) {
-            updateSyncStatus("Network error during upload.", 'alert');
-            console.error('Upload error:', error);
-        }
+        const response = await fetch(JSONPLACEHOLDER_URL, {
+            method: 'POST', 
+            headers: {
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify(localQuotes)
+        });
         */
         
-        // Use localStorage simulation for local testing:
         localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
         updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
     } else {
@@ -387,4 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Task 3: Sync buttons
     document.getElementById('syncButton').addEventListener('click', syncQuotes);
     document.getElementById('simulateConflict').addEventListener('click', simulateServerUpdate);
+
+    // Task 3 Requirement: Periodic sync check
+    setInterval(syncQuotes, SYNC_INTERVAL_MS);
 });
