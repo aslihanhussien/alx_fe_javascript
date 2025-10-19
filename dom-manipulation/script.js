@@ -1,5 +1,6 @@
 // Global array for quotes.
 let quotes = [];
+const JSONPLACEHOLDER_URL = "https://jsonplaceholder.typicode.com/posts"; // Required URL
 
 // --- UTILITY FUNCTIONS FOR WEB STORAGE AND DATA HANDLING (Task 1 & 3) ---
 
@@ -12,10 +13,25 @@ function saveQuotes() {
 
 /**
  * Fetches quotes from the simulated server (localStorage).
+ * NOTE: For a real app, this would be an async function fetching from a real endpoint.
  * REQUIRED NAME: fetchQuotesFromServer
  * @returns {Array} Array of quotes from the simulated server.
  */
-function fetchQuotesFromServer() {
+async function fetchQuotesFromServer() {
+    // --- SIMULATION OF REAL FETCH ---
+    
+    // In a real app:
+    // try {
+    //     const response = await fetch(JSONPLACEHOLDER_URL);
+    //     const data = await response.json();
+    //     // Transform the mock data into your quote structure if needed
+    //     return data.map(item => ({ text: item.title, category: 'API' }));
+    // } catch (error) {
+    //     console.error('Failed to fetch from server:', error);
+    //     return []; 
+    // }
+    
+    // Use localStorage simulation for testing purposes:
     const serverQuotesString = localStorage.getItem('serverQuotes');
     return JSON.parse(serverQuotesString || '[]');
 }
@@ -23,11 +39,11 @@ function fetchQuotesFromServer() {
 /**
  * Loads the 'quotes' array from Local Storage and initializes defaults or server data.
  */
-function loadQuotes() {
+async function loadQuotes() {
     const storedQuotes = localStorage.getItem('storedQuotes');
     
     // Step 1: Fetch from simulated server
-    const serverQuotes = fetchQuotesFromServer();
+    const serverQuotes = await fetchQuotesFromServer();
     
     if (storedQuotes) {
         // Load quotes from Local Storage (Client's current state)
@@ -35,7 +51,7 @@ function loadQuotes() {
     } else if (serverQuotes.length > 0) {
         // If client storage is empty, initialize from simulated server data
         quotes = serverQuotes;
-        saveQuotes(); // Save to local storage for the first time
+        saveQuotes(); 
     } else {
         // Use default initial quotes if both Local Storage and server are empty
         quotes = [
@@ -43,7 +59,6 @@ function loadQuotes() {
             { text: "Strive not to be a success, but rather to be of value.", category: "Inspiration" },
             { text: "Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment.", category: "Life" },
         ];
-        // For the first time, save this as both client and server state
         saveQuotes();
         localStorage.setItem('serverQuotes', JSON.stringify(quotes));
     }
@@ -75,7 +90,7 @@ function displaySessionData() {
  * Simulates an external update to the "server" database by adding a quote only there.
  */
 function simulateServerUpdate() {
-    let serverQuotes = fetchQuotesFromServer();
+    let serverQuotes = JSON.parse(localStorage.getItem('serverQuotes') || '[]');
     
     const newServerQuote = { 
         text: "The future belongs to those who believe in the beauty of their dreams.", 
@@ -91,13 +106,11 @@ function simulateServerUpdate() {
 /**
  * Syncs local quotes with simulated server quotes and handles conflicts.
  */
-function syncQuotes() {
-    // Step 1: Use the dedicated fetch function
-    const serverQuotes = fetchQuotesFromServer();
+async function syncQuotes() { // Made async to match fetchQuotesFromServer
+    const serverQuotes = await fetchQuotesFromServer();
     const localQuotesString = localStorage.getItem('storedQuotes');
     
     if (!localQuotesString) {
-        // If local storage is unexpectedly empty, re-run load logic and fetch
         loadQuotes();
         updateSyncStatus("Client data re-initialized from server.", 'ok');
         return;
@@ -111,26 +124,27 @@ function syncQuotes() {
         return;
     }
 
-    // Conflict Resolution: Find server quotes not present locally
+    // Conflict Resolution: Find server quotes not present locally (Server Wins)
     const newServerQuotes = serverQuotes.filter(sQuote => 
         !localQuotes.some(lQuote => lQuote.text === sQuote.text)
     );
 
     if (newServerQuotes.length > 0) {
-        // Conflict detected: Server has new data (Server Wins)
-        quotes.push(...newServerQuotes); // Merge server data into client
-        saveQuotes(); // Save the merged result locally
+        // Conflict detected: Server has new data
+        quotes.push(...newServerQuotes);
+        saveQuotes(); 
         
         updateSyncStatus(`Synchronization successful: Merged ${newServerQuotes.length} new quotes from the server.`, 'alert');
         
         // Update the server to reflect the client's new, complete state
         localStorage.setItem('serverQuotes', JSON.stringify(quotes));
 
-        // Refresh UI elements
         populateCategories();
         filterQuotes();
     } else if (localQuotes.length > serverQuotes.length) {
         // Client has new data not on server (Local Wins)
+        // In a real app, this would be a POST/PUT call to the server
+        // await fetch(JSONPLACEHOLDER_URL, { method: 'POST', body: JSON.stringify(localQuotes) });
         localStorage.setItem('serverQuotes', JSON.stringify(localQuotes));
         updateSyncStatus("Synchronization successful: Uploaded local changes to server.", 'ok');
     } else {
@@ -327,9 +341,9 @@ function importFromJsonFile(event) {
 
 // --- INITIALIZATION ---
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => { // Changed to async
     // 1. Load quotes from Local Storage (or simulated server)
-    loadQuotes(); 
+    await loadQuotes(); // Await loadQuotes
     
     // 2. Initialize UI elements
     createAddQuoteForm(); 
